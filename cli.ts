@@ -1,6 +1,6 @@
 import readline from "readline";
 import bcrypt from "bcrypt";
-import { db } from "./db.js";
+import { db } from "./db";
 import { v4 as uuidv4 } from 'uuid';
 
 const rl = readline.createInterface({
@@ -8,7 +8,7 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-const ask = (question) => new Promise(resolve => {
+const ask = (question: string) => new Promise<string>(resolve => {
     rl.question(`${question} `, resolve);
 });
 

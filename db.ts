@@ -3,8 +3,8 @@ import sqlite3 from 'sqlite3';
 export class db {
   static instance = new sqlite3.Database('./database.sqlite');
 
-  static get = (sql, ...params) => new Promise((resolve) => {
-    db.instance.get(sql, ...params, (err, rows) => {
+  static get = (sql: string, ...params: string[]) => new Promise<object>((resolve, reject) => {
+    db.instance.get(sql, ...params, (err: string, rows: object) => {
       if (err) {
         console.log(err);
         return reject(err);
@@ -13,8 +13,8 @@ export class db {
     });
   });
 
-  static all = (sql, ...params) => new Promise((resolve, reject) => {
-    db.instance.all(sql, ...params, (err, rows) => {
+  static all = (sql: string, ...params: string[]) => new Promise<object[]>((resolve, reject) => {
+    db.instance.all(sql, ...params, (err: string, rows: object[]) => {
       if (err) {
         console.log(err);
         return reject(err);
