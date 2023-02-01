@@ -1,11 +1,9 @@
-import express from 'express';
-const app = express();
-const port = 3000;
+import app from './rest/server';
+import dotenv from "dotenv";
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+dotenv.config();
 
-app.listen(port, () => {
-  return console.log(`Express is listening at http://localhost:${port}`);
+const API_PORT = process.env.API_PORT || 3000;
+app.listen(API_PORT, () => {
+  console.log(`REST server listening on port ${API_PORT}`);
 });

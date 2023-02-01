@@ -1,9 +1,9 @@
 import sqlite3 from 'sqlite3';
 
 export class db {
-  static instance = new sqlite3.Database('./database.sqlite');
+  static instance = new sqlite3.Database('../database.sqlite');
 
-  static get = (sql: string, ...params: string[]) => new Promise<object>((resolve, reject) => {
+  static get = (sql: string, ...params: string[]) => new Promise<any>((resolve, reject) => {
     db.instance.get(sql, ...params, (err: string, rows: object) => {
       if (err) {
         console.log(err);
@@ -13,7 +13,7 @@ export class db {
     });
   });
 
-  static all = (sql: string, ...params: string[]) => new Promise<object[]>((resolve, reject) => {
+  static all = (sql: string, ...params: string[]) => new Promise<any[]>((resolve, reject) => {
     db.instance.all(sql, ...params, (err: string, rows: object[]) => {
       if (err) {
         console.log(err);

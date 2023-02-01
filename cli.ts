@@ -1,6 +1,6 @@
 import readline from "readline";
 import bcrypt from "bcrypt";
-import { db } from "./db";
+import { db } from "./utils/db";
 import { v4 as uuidv4 } from 'uuid';
 
 const rl = readline.createInterface({
