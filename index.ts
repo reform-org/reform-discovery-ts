@@ -1,9 +1,13 @@
 import app from './rest/server';
 import dotenv from "dotenv";
+import webSocketServer from './wss/socket';
 
 dotenv.config();
 
-const API_PORT = process.env.API_PORT || 3000;
-app.listen(API_PORT, () => {
-  console.log(`REST server listening on port ${API_PORT}`);
+app.listen(process.env.API_PORT || 3000, () => {
+  console.log(`REST server listening on port ${process.env.API_PORT || 3000}`);
+});
+
+webSocketServer.listen(process.env.WSS_PORT || 7071, () => {
+  console.log(`WSS server listening on port ${process.env.WSS_PORT || 7071}`);
 });

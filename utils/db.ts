@@ -1,7 +1,8 @@
 import sqlite3 from 'sqlite3';
+import { root } from '../path';
 
 export class db {
-  static instance = new sqlite3.Database('../database.sqlite');
+  static instance = new sqlite3.Database(root + '/database.sqlite');
 
   static get = (sql: string, ...params: string[]) => new Promise<any>((resolve, reject) => {
     db.instance.get(sql, ...params, (err: string, rows: object) => {
