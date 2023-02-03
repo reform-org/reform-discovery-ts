@@ -10,13 +10,6 @@ export const webSocketServer = process.env.HTTPS === "TRUE" ? createServer({
 
 const wss = new WebSocketServer({ noServer: true });
 
-
-
-
-
-
-
-
 webSocketServer.on('upgrade', (req, res, head) => {
     wss.handleUpgrade(req, res, head, (ws) => {
         wss.emit("connection", ws);
