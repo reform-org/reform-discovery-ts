@@ -4,6 +4,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from 'uuid';
 
 export const app = express();
 
@@ -32,7 +33,7 @@ app.post("/api/login", async (req, res) => {
 
     if (!bcrypt.compareSync(password, userEntry.password)) return res.status(401).json(error(`The password for the user "${username}" is wrong.`, ["password"]));
 
-    const token = jwt.sign({ username, uuid: userEntry.uuid }, process.env.JWT_KEY, { expiresIn: '14d' }); // 14 days
+    const token = jwt.sign({ username, uuid: userEntry.uuid, device: uuidv4() }, process.env.JWT_KEY, { expiresIn: '14d' }); // 14 days
     res.json({ username, token });
 });
 
