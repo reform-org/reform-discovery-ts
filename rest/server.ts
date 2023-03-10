@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const app = express();
 
+const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH
+
 const error = (message: string, fields: string[] = []) => {
     return {
         error: {
@@ -20,7 +22,7 @@ const error = (message: string, fields: string[] = []) => {
 app.use(bodyParser.json());
 app.use(cors({ origin: "*" }));
 
-app.post("/api/login", async (req, res) => {
+app.post(`${serverPath}/api/login`, async (req, res) => {
     const username = req.body?.username;
     const password = req.body?.password;
 
