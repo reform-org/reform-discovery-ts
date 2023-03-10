@@ -20,7 +20,7 @@ const error = (message: string, fields: string[] = []) => {
     };
 };
 
-app.post(`${serverPath}/api/sso`, async (req, res) => {
+app.post(`${serverPath}/v1/sso`, async (req, res) => {
     const issuer = await Issuer.discover("https://login-dev.hrz.tu-darmstadt.de")
     console.log('Discovered issuer %s %O', issuer.issuer, issuer.metadata);
     res.send()
@@ -29,7 +29,7 @@ app.post(`${serverPath}/api/sso`, async (req, res) => {
 app.use(bodyParser.json());
 app.use(cors({ origin: "*" }));
 
-app.post(`${serverPath}/api/login`, async (req, res) => {
+app.post(`${serverPath}/v1/login`, async (req, res) => {
     const username = req.body?.username;
     const password = req.body?.password;
 
