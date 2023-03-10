@@ -6,11 +6,13 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from 'uuid';
 import { Issuer } from 'openid-client';
+import dotenv from "dotenv"
+
+dotenv.config()
 
 export const app = express();
 
 const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH
-console.log(serverPath)
 
 const error = (message: string, fields: string[] = []) => {
     return {
