@@ -20,10 +20,10 @@ const error = (message: string, fields: string[] = []) => {
     };
 };
 
-app.post(`${serverPath}/v1/sso`, async (req, res) => {
+app.get(`${serverPath}/v1/sso`, async (req, res) => {
     const issuer = await Issuer.discover("https://login-dev.hrz.tu-darmstadt.de")
     console.log('Discovered issuer %s %O', issuer.issuer, issuer.metadata);
-    res.send()
+    res.json(issuer)
 })
 
 app.use(bodyParser.json());
