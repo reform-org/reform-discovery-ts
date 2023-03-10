@@ -5,6 +5,7 @@ import bodyParser from "body-parser";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from 'uuid';
+import { Issuer } from 'openid-client';
 
 export const app = express();
 
@@ -18,6 +19,12 @@ const error = (message: string, fields: string[] = []) => {
         }
     };
 };
+
+app.post(`${serverPath}/api/sso`, async (req, res) => {
+    const issuer = await Issuer.discover("https://login-dev.hrz.tu-darmstadt.de")
+    console.log('Discovered issuer %s %O', issuer.issuer, issuer.metadata);
+    res.send()
+})
 
 app.use(bodyParser.json());
 app.use(cors({ origin: "*" }));
