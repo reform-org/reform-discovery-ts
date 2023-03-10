@@ -1,8 +1,11 @@
 import app from './rest/server';
 import dotenv from "dotenv";
 import webSocketServer from './wss/socket';
+import { db } from "./utils/db";
 
 dotenv.config();
+
+db.init()
 
 app.listen(process.env.VITE_DISCOVERY_SERVER_LISTEN_PORT || 3000, () => {
   console.log(`REST server listening on port ${process.env.VITE_DISCOVERY_SERVER_LISTEN_PORT || 3000}`);

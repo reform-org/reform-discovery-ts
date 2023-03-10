@@ -10,6 +10,8 @@ import dotenv from "dotenv"
 
 dotenv.config()
 
+db.init()
+
 export const app = express();
 const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
 
