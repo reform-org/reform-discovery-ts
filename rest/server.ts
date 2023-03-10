@@ -10,6 +10,7 @@ import { Issuer } from 'openid-client';
 export const app = express();
 
 const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH
+console.log(serverPath)
 
 const error = (message: string, fields: string[] = []) => {
     return {
