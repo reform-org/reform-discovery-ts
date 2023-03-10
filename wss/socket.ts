@@ -16,9 +16,9 @@ const wss = new WebSocketServer({ noServer: true });
 
 const pings = new Map<WebSocket, number>();
 const authenticatedClients = new Map<WebSocket, TokenPayload>();
-const authenticatedUserClients = new Map<string, Array<WebSocket>>();
-const getWSForUser = (uuid: string) => authenticatedUserClients.get(uuid);
-const addWSForUser = (uuid: string, ws: WebSocket) => authenticatedUserClients.set(uuid, [...(authenticatedUserClients.get(uuid) || []), ws])
+const authenticatedClientsForUuid = new Map<string, Array<WebSocket>>();
+const getWSForUser = (uuid: string) => authenticatedClientsForUuid.get(uuid);
+const addWSForUser = (uuid: string, ws: WebSocket) => authenticatedClientsForUuid.set(uuid, [...(authenticatedClientsForUuid.get(uuid) || []), ws])
 
 db.instance.exec("DELETE FROM devices")
 
