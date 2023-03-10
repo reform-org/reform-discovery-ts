@@ -20,6 +20,10 @@ const error = (message: string, fields: string[] = []) => {
     };
 };
 
+app.get("/", (req, res) => {
+    res.json({hello: "world"})
+})
+
 app.get(`${serverPath}/v1/sso`, async (req, res) => {
     const issuer = await Issuer.discover("https://login-dev.hrz.tu-darmstadt.de")
     console.log('Discovered issuer %s %O', issuer.issuer, issuer.metadata);
