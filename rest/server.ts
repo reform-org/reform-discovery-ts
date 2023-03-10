@@ -20,7 +20,7 @@ const error = (message: string, fields: string[] = []) => {
     };
 };
 
-app.get("/api", (req, res) => {
+app.get("${serverPath}", (req, res) => {
     res.json({hello: "world"})
 })
 
