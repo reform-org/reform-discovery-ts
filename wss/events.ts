@@ -4,7 +4,6 @@ export interface Event<T> {
 }
 
 export interface Payload {}
-export interface PingPayload extends Payload {}
 export interface AuthPayload extends Payload {
     token: string
 }

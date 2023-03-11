@@ -2,7 +2,7 @@ import { createServer } from "https";
 import { readFileSync } from "fs";
 import { createServer as createHttpServer } from "http";
 import { WebSocket, WebSocketServer } from "ws";
-import { AuthPayload, Event, Payload, PingPayload, TokenPayload } from "./types";
+import { AuthPayload, Event, Payload, TokenPayload } from "./events";
 import jwt from "jsonwebtoken";
 import { db } from "../utils/db";
 import { ping } from "./helpers";
@@ -52,7 +52,7 @@ wss.on("connection", (ws: WebSocket) => {
             console.log('not an event', err);
         }
     })
-        .on("pong", (payload: PingPayload) => {
+        .on("pong", () => {
             pings.set(ws, 0);
         })
         .on("authenticate", (payload: AuthPayload) => {
