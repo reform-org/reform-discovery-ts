@@ -2,7 +2,7 @@ import { createServer } from "https";
 import { readFileSync } from "fs";
 import { createServer as createHttpServer } from "http";
 import { WebSocket, WebSocketServer } from "ws";
-import { AuthPayload, Event, Payload, TokenPayload } from "./events";
+import { AuthPayload, Event, FinishConnectionPayload, Payload, TokenPayload, TransmitTokenPayload } from "./events";
 import jwt from "jsonwebtoken";
 import { db } from "../utils/db";
 import { ping } from "./helpers";
@@ -24,8 +24,9 @@ db.instance.exec("DELETE FROM devices")
 wss.on("connection", (ws: WebSocket) => {
     ws.on("error", console.error);
 
-    ws.on("close", () => {
+    ws.on("close", async () => {
         connections.removePeer(ws)
+        await connections.broadcastConnectionInfo()
     });
 
     ws.on("message", function (message) {
@@ -52,17 +53,44 @@ wss.on("connection", (ws: WebSocket) => {
                 const peer = new Peer(tokenPayload.device, user, ws)
                 connections.addPeer(peer)
 
-                // // send information to client about all connections that should happen automatically now
-                const eligibleUsers = await user.getEligibleUsers()
+                // send information to client about all connections that should happen automatically now
+                const eligibleUsers = await user.getConnectableUsers()
                 for (let client of eligibleUsers) {
                     connections.getPeers(client).forEach(p => {
                         connections.connect(p, peer)
                     })
                 }
 
-                // await broadcastAvailableClients(clientToUser);
+                await connections.broadcastConnectionInfo()
             });
-        });
+        })
+        .on("host_token", (payload: TransmitTokenPayload) => {
+            const peer = connections.getPeer(ws)
+            if(!peer) return;
+            const connection = connections.getConnection(payload.connection)
+            connection.host.token = payload.token
+            connection.requestClientToken()
+        })
+        .on("client_token", (payload: TransmitTokenPayload) => {
+            const peer = connections.getPeer(ws)
+            if(!peer) return;
+            const connection = connections.getConnection(payload.connection)
+            connection.client.token = payload.token
+
+            connection.requestClientFinishConnection()
+            connection.requestHostFinishConnection()
+        })
+        .on("finish_connection", (payload: FinishConnectionPayload) => {
+            const peer = connections.getPeer(ws)
+            if(!peer) return;
+
+            const connection = connections.getConnection(payload.connection)
+
+            connection.finish(ws)
+        })
+        .on("request_available_clients", async (data) => {
+            connections.getPeer(ws).sendConnectionInfo()
+        })
 });
 
 webSocketServer.on('upgrade', (req, res, head) => {

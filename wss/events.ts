@@ -14,3 +14,10 @@ export interface TokenPayload {
     iat: number
     exp: number
 }
+export interface TransmitTokenPayload {
+    connection: string
+    token: string
+}
+export interface FinishConnectionPayload {
+    connection: string
+}

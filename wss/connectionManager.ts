@@ -17,10 +17,15 @@ export class ConnectionManager{
         this.connections = this.connections.filter(p => p.id !== connection.id) 
     }
 
+    public getConnection(id: string) {
+        return this.connections[this.connections.findIndex(p => p.id === id)]
+    }
+
     public connect(host: Peer, client: Peer): void {
         if(this.checkConnected(host, client)) return;
         const connection = new Connection(host, client)
-        send(host.socket, {type: "request_host_token", payload: connection})
+        this.addConnection(connection)
+        connection.requestHostToken()
     }
 
     private checkConnected(a: Peer, b: Peer): Boolean {
@@ -36,6 +41,9 @@ export class ConnectionManager{
         const peer = this.getPeer(ws);
         db.instance.run("DELETE FROM devices WHERE device_uuid = ?", peer.device);
         this.peers = this.peers.filter(p => p.socket !== ws)
+        const openConnections = this.connections.filter(p => p.client.socket === ws || p.host.socket === ws)
+        openConnections.forEach(connection => connection.close(peer))
+        this.connections = this.connections.filter(p => !(p.client.socket === ws || p.host.socket === ws))
     }
 
     public getPeer(ws: WebSocket) {
@@ -44,5 +52,9 @@ export class ConnectionManager{
 
     public getPeers(user: User) {
         return this.peers.filter(p => p.user.id === user.id)
+    }
+
+    public async broadcastConnectionInfo() {
+        await Promise.all(this.peers.map(peer => peer.sendConnectionInfo()))
     }
 }

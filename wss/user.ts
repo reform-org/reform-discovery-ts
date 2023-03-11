@@ -25,8 +25,8 @@ export class User {
     }
 
 
-    public async getEligibleUsers(): Promise<Array<User>> {
-        const eligibleUsers = (
+    public async getConnectableUsers(): Promise<Array<User>> {
+        const users = (
             await db.all(`
                 SELECT name, uuid FROM users 
                 WHERE EXISTS(SELECT * FROM trust WHERE (a = ? AND b = id)) 
@@ -34,6 +34,22 @@ export class User {
                 AND EXISTS(SELECT * FROM devices WHERE user_uuid = ?)`, this.id, this.id, this.id)
         ).map(user => new User(user.uuid, user.name));
 
-        return eligibleUsers
+        return users
+    }
+
+    public async getAvailableUsers(): Promise<Array<User>> {
+        const users = (
+            await db.all(`
+            SELECT name, uuid, 
+            EXISTS(SELECT * FROM trust WHERE a = ? AND b = id) as trusted, 
+            (EXISTS(SELECT * FROM trust WHERE a = ? AND b = id) AND EXISTS(SELECT * FROM trust WHERE a = id AND b = ?)) as mutualTrust 
+            FROM users 
+            WHERE (EXISTS(SELECT * FROM trust WHERE a = ? AND b = id) 
+            AND EXISTS(SELECT * FROM trust WHERE a = id AND b = ?)) = FALSE 
+            AND NOT id = ? 
+            AND EXISTS(SELECT * FROM devices WHERE user_uuid = ?)`, this.id, this.id, this.id, this.id, this.id, this.id, this.id)
+        ).map(user => new User(user.uuid, user.name));
+
+        return users
     }
 }
