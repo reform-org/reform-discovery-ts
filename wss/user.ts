@@ -24,6 +24,9 @@ export class User {
         return this
     }
 
+    public trust(user: User) {
+        db.instance.run("INSERT OR REPLACE INTO trust(a, b) VALUES (?, ?)", this.id, user.id);
+    }
 
     public async getConnectableUsers(): Promise<Array<User>> {
         const users = (
