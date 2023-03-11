@@ -6,6 +6,9 @@ import { AuthPayload, Event, Payload, TokenPayload } from "./events";
 import jwt from "jsonwebtoken";
 import { db } from "../utils/db";
 import { ping } from "./helpers";
+import { ConnectionManager } from "./connectionManager";
+import { Peer } from "./peer";
+import { User } from "./user";
 
 export const webSocketServer = process.env.HTTPS === "TRUE" ? createServer({
     cert: readFileSync(process.env.CERT_PATH),
@@ -14,38 +17,21 @@ export const webSocketServer = process.env.HTTPS === "TRUE" ? createServer({
 
 const wss = new WebSocketServer({ noServer: true });
 
-const pings = new Map<WebSocket, number>();
-const authenticatedClients = new Map<WebSocket, TokenPayload>();
-const authenticatedClientsForUuid = new Map<string, Array<WebSocket>>();
-const getWSForUser = (uuid: string) => authenticatedClientsForUuid.get(uuid);
-const addWSForUser = (uuid: string, ws: WebSocket) => authenticatedClientsForUuid.set(uuid, [...(authenticatedClientsForUuid.get(uuid) || []), ws])
+const connections = new ConnectionManager()
 
 db.instance.exec("DELETE FROM devices")
 
 wss.on("connection", (ws: WebSocket) => {
     ws.on("error", console.error);
-    pings.set(ws, 0);
-
-    setInterval(() => {
-        const sentPings = pings.get(ws);
-        if (sentPings >= 2) {
-            ws.close();
-        } else {
-            ping(ws);
-            pings.set(ws, sentPings + 1);
-        }
-    }, 10000);
 
     ws.on("close", () => {
-        const token = authenticatedClients.get(ws)
-        db.instance.run("DELETE FROM devices WHERE device_uuid = ?", token.device);
-        authenticatedClients.delete(ws);
+        connections.removePeer(ws)
     });
 
     ws.on("message", function (message) {
         try {
             const event: Event<Payload> = JSON.parse(message.toString());
-            if (event.type === "pong" || event.type === "authenticate" || authenticatedClients.has(ws)) {
+            if (event.type === "pong" || event.type === "authenticate" || connections.getPeer(ws)) {
                 this.emit(event.type, event.payload);
             }
         } catch (err) {
@@ -53,7 +39,7 @@ wss.on("connection", (ws: WebSocket) => {
         }
     })
         .on("pong", () => {
-            pings.set(ws, 0);
+            connections.getPeer(ws).registerPong()
         })
         .on("authenticate", (payload: AuthPayload) => {
             jwt.verify(payload.token, process.env.JWT_KEY, async (err, tokenPayload: TokenPayload) => {
@@ -62,21 +48,17 @@ wss.on("connection", (ws: WebSocket) => {
                     return;
                 };
 
-                authenticatedClients.set(ws, tokenPayload);
-                addWSForUser(tokenPayload.uuid, ws);
-
-                db.instance.run("INSERT OR REPLACE INTO devices VALUES(?, ?)", tokenPayload.uuid, tokenPayload.device);
-
-                // const user = await db.get("SELECT id, uuid, name FROM users WHERE uuid = ?", tokenPayload.uuid);
+                const user = await (new User()).load(tokenPayload.uuid)
+                const peer = new Peer(tokenPayload.device, user, ws)
+                connections.addPeer(peer)
 
                 // // send information to client about all connections that should happen automatically now
-                // const eligibleUsers = await db.all("SELECT name, uuid FROM users WHERE EXISTS(SELECT * FROM trust WHERE (a = ? AND b = id)) AND EXISTS(SELECT * FROM trust WHERE (a = id AND b = ?)) AND online = 1 AND NOT id = ?", user.id, user.id, user.id);
-                // for (let clientUser of eligibleUsers) {
-                //     initializeConnection(ws, user, clientUser);
-                // }
-
-                // // connect to all own peers
-                // initializeConnection(ws, user, user);
+                const eligibleUsers = await user.getEligibleUsers()
+                for (let client of eligibleUsers) {
+                    connections.getPeers(client).forEach(p => {
+                        connections.connect(p, peer)
+                    })
+                }
 
                 // await broadcastAvailableClients(clientToUser);
             });
