@@ -1,7 +1,6 @@
 import { WebSocket } from "ws";
 import { db } from "../utils/db";
 import { Connection } from "./connection";
-import { send } from "./helpers";
 import { Peer } from "./peer";
 import { User } from "./user";
 
