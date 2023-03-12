@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { Issuer, generators } from 'openid-client';
 import dotenv from "dotenv"
 import { authenticateToken } from "./middleware";
+import multer from "multer";
+import { Mail, Mailer } from "./mailer";
 
 dotenv.config()
 
@@ -75,7 +77,7 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
         res.json({ username, token });
     });
 
-    app.post(`${serverPath}/mail`, authenticateToken, async (req, res) => {
+    app.post(`${serverPath}/mail`, authenticateToken, multer({}).single("attachment"), async (req, res) => {
         // only x mails per user per day, should be configurable in env
         // log sent emails with sender, reciever and timestamp
         // smtp sending
@@ -83,11 +85,18 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
         // attachment
         // sender should be in blind copy
 
-        const replyTo = req.body?.replyTo;
-        if (!replyTo) return res.status(400).json(error("ReplyTo must not be empty!", ["replyto"]));
+        const from = req.body?.replyTo;
+        if (!from) return res.status(400).json(error("ReplyTo must not be empty!", ["replyto"]));
+        const fromName = req.body?.fromName;
+        if (!fromName) return res.status(400).json(error("fromName must not be empty!", ["fromName"]));
+        const to = req.body?.to;
+        if (!to) return res.status(400).json(error("to must not be empty!", ["to"]));
         const html = req.body?.html;
         if (!html) return res.status(400).json(error("HTML must not be empty!", ["html"]));
 
+        const mailer = Mailer.getInstance()
+        const mail = new Mail({from: from, fromName: fromName, to: to, html: html, subject: "My fancy subject"})
+        await mailer.send(mail)
 
         res.json({})
     })

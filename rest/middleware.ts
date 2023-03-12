@@ -3,6 +3,14 @@ import jwt, { VerifyErrors } from "jsonwebtoken";
 import { TokenPayload } from "../wss/events";
 import { User } from "../wss/user";
 
+declare global {
+    namespace Express {
+        interface Request {
+            user: User
+        }
+    }
+}
+
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
