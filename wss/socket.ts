@@ -33,7 +33,7 @@ wss.on("connection", (ws: WebSocket) => {
         try {
             const event: Event<Payload> = JSON.parse(message.toString());
             if (event.type === "pong" || event.type === "authenticate" || connections.getPeer(ws)) {
-                this.emit(event.type, event.payload);
+                this.emit(event.type, connections.getPeer(ws), event.payload);
             }
         } catch (err) {
             console.log('not an event', err);
@@ -64,37 +64,25 @@ wss.on("connection", (ws: WebSocket) => {
                 await connections.broadcastConnectionInfo()
             });
         })
-        .on("host_token", (payload: TransmitTokenPayload) => {
-            const peer = connections.getPeer(ws)
-            if (!peer) return;
+        .on("host_token", (peer: Peer, payload: TransmitTokenPayload) => {
             const connection = connections.getConnection(payload.connection)
             connection.host.token = payload.token
             connection.requestClientToken()
         })
-        .on("client_token", (payload: TransmitTokenPayload) => {
-            const peer = connections.getPeer(ws)
-            if (!peer) return;
+        .on("client_token", (peer: Peer, payload: TransmitTokenPayload) => {
             const connection = connections.getConnection(payload.connection)
             connection.client.token = payload.token
 
             connection.requestClientFinishConnection()
             connection.requestHostFinishConnection()
         })
-        .on("finish_connection", (payload: FinishConnectionPayload) => {
-            const peer = connections.getPeer(ws)
-            if (!peer) return;
-
-            const connection = connections.getConnection(payload.connection)
-
-            connection.finish(ws)
+        .on("finish_connection", (peer: Peer, payload: FinishConnectionPayload) => {
+            connections.getConnection(payload.connection).finish(peer)
         })
-        .on("request_available_clients", async (data) => {
-            await connections.getPeer(ws).sendConnectionInfo()
+        .on("request_available_clients", async (peer: Peer) => {
+            await peer.sendConnectionInfo()
         })
-        .on("whitelist_add", async (payload: WhitelistPayload) => {
-            const peer = connections.getPeer(ws)
-            if (!peer) return;
-
+        .on("whitelist_add", async (peer: Peer, payload: WhitelistPayload) => {
             const userToTrust = await (new User()).load(payload.uuid)
             if (!userToTrust) return;
 
@@ -111,38 +99,24 @@ wss.on("connection", (ws: WebSocket) => {
             await peer.sendConnectionInfo()
             await Promise.all(connections.getPeers(peer.user).map(p => p.sendConnectionInfo()))
         })
-        .on("whitelist_del", async (data) => {
-            // const user = clientToUser.get(ws);
-            // const uuid = data.uuid;
-            // if (!uuid) return;
-            // const userEntry = await db.get("SELECT * FROM users WHERE uuid = ?", uuid);
-            // if (!userEntry) return;
+        .on("whitelist_del", async (peer: Peer, payload: WhitelistPayload) => {
+            const userToUntrust = await (new User()).load(payload.uuid)
+            if (!userToUntrust) return;
 
-            // db.instance.run("DELETE FROM trust WHERE a = ? AND b = ?", user.id, userEntry.id);
+            peer.user.withdrawTrust(userToUntrust)
 
-            // const mutualTrust = await db.get("SELECT (EXISTS(SELECT * FROM trust WHERE a = ? AND b = ?) AND EXISTS(SELECT * FROM trust WHERE a = ? AND b = ?)) as mutualTrust", user.id, userEntry.id, userEntry.id, user.id)
-            // if(!mutualTrust.mutualTrust) {
-            //     console.log("no mutual trust")
-            //     // const connectionsToKill = [];
-            //     // for(let [host, connection] of establishedConnections){
-            //     //     if(clientToUser.get(host).uuid === user.uuid && clientToUser.get(connection.ws)?.uuid === userEntry.uuid){
-            //     //         connectionsToKill.push({a: host, b: connection.ws, id: connection.id})
-            //     //     }
-            //     // }
-
-            //     // for(let connection of connectionsToKill){
-            //     //     connection.a.send(JSON.stringify({type: "connection_closed", payload: {id: connection.id}}))
-            //     //     connection.b.send(JSON.stringify({type: "connection_closed", payload: {id: connection.id}}))
-            //     //     establishedConnections.set(connection.a, (establishedConnections.get(connection.a) || []).filter(w => w.ws !== connection.b));
-            //     //     establishedConnections.set(connection.b, (establishedConnections.get(connection.b) || []).filter(w => w.ws !== connection.a));
-
-            //     // }
-            // }
-
-            // sendAvailableClients(ws);
-            // for (let client of (uuidToClients.get(uuid) || [])) {
-            //     sendAvailableClients(client);
-            // }
+            const connectionsToClose = connections.getConnections(peer.user).filter(p => p.client.user.id !== userToUntrust.id && p.host.user.id !== userToUntrust.id)
+            connectionsToClose.forEach(connection => connection.close(peer))
+          
+            await Promise.all(connections.getConnections(peer.user).map(connection => {
+                if(connection.client.user.id === peer.user.id) connection.client.sendConnectionInfo()
+                if(connection.host.user.id === peer.user.id) connection.host.sendConnectionInfo()
+            }))
+            
+            await Promise.all(connections.getConnections(userToUntrust).map(connection => {
+                if(connection.client.user.id === userToUntrust.id) connection.client.sendConnectionInfo()
+                if(connection.host.user.id === userToUntrust.id) connection.host.sendConnectionInfo()
+            }))
         })
 });
 

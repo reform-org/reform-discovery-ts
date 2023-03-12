@@ -38,9 +38,9 @@ export class Connection{
         send(this.host.socket, {type: "request_host_finish_connection", payload: this})
     }
 
-    public finish(ws: WebSocket): void {
-        if(this.host.socket === ws) this.hostConnected = true
-        if(this.client.socket === ws) this.clientConnected = true
+    public finish(peer: Peer): void {
+        if(this.host.socket === peer.socket) this.hostConnected = true
+        if(this.client.socket === peer.socket) this.clientConnected = true
         if(this.hostConnected && this.clientConnected) this.state = ConnectionState.Connected
     }
 

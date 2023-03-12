@@ -28,6 +28,10 @@ export class User {
         db.instance.run("INSERT OR REPLACE INTO trust(a, b) VALUES (?, ?)", this.id, user.id);
     }
 
+    public withdrawTrust(user: User) {
+        db.instance.run("DELETE FROM trust WHERE a = ? AND b = ?", this.id, user.id);
+    }
+
     public async getConnectableUsers(): Promise<Array<User>> {
         const users = (
             await db.all(`

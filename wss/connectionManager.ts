@@ -8,25 +8,67 @@ export class ConnectionManager{
     private connections: Array<Connection> = []
     private peers: Array<Peer> = []
 
+    /**
+     * Adds a new connection and has no further side effects
+     * @param connection the connection will be added to the list of connections
+     */
     public addConnection(connection: Connection) {
         this.connections.push(connection)
     }
 
+    /**
+     * Removes a connection and has no further side effects
+     * @param connection the connection will be removed from the list of connections
+     */
     public removeConnection(connection: Connection) {
         this.connections = this.connections.filter(p => p.id !== connection.id) 
     }
 
+    /**
+     * Returns a single connection
+     * @param id the id of a connection
+     * @returns null if no connection has been found with the given id, the connection object which can be edited inplace, e.g. all changes to the returned object are reflected in the datastructure
+     */
     public getConnection(id: string) {
-        return this.connections[this.connections.findIndex(p => p.id === id)]
+        const index = this.connections.findIndex(p => p.id === id)
+        if(index < 0) return null
+        return this.connections[index]
     }
 
-    public connect(host: Peer, client: Peer): void {
+    /**
+     * Returns an array of connections where the user is either host or client
+     * @param user 
+     * @returns an array of connections where the user is either host or client or an empty array if there are non such connections
+     */
+    public getConnections(user: User) {
+        return this.connections.filter(p => p.client.user.id === user.id || p.host.user.id === user.id)
+    }
+
+    /**
+     * Establishes a connection between two peers, where one peer is labelled host and one is labelled client
+     * - The connection is only established if the two peers are not already connected
+     * - loopback connections are not allowed
+     * 
+     * The connection will be added to the list of connections and has the initial state of Pending.
+     * A request_host_token message is sent to the host to initiate the connection flow.
+     * 
+     * @param host 
+     * @param client 
+     */
+    public connect(host: Peer, client: Peer) {
         if(this.checkConnected(host, client)) return;
+        if(host.socket === client.socket) return;
         const connection = new Connection(host, client)
         this.addConnection(connection)
         connection.requestHostToken()
     }
 
+    /**
+     * Checks if two peers are already connected, the state is ignored and therefore Pending connections are counted as well
+     * @param a 
+     * @param b 
+     * @returns true if the two peers are connected
+     */
     private checkConnected(a: Peer, b: Peer): Boolean {
         return this.connections.filter(p => (p.client === a && p.host === b) || (p.client === b && p.host === a)).length > 0
     }
