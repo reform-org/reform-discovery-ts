@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from 'uuid';
 import { Issuer, generators } from 'openid-client';
 import dotenv from "dotenv"
+import { authenticateToken } from "./middleware";
 
 dotenv.config()
 
@@ -54,6 +55,7 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
     })
     
     app.use(bodyParser.json());
+    app.use(express.urlencoded({ extended: true }));
     app.use(cors({ origin: "*" }));
     
     app.post(`${serverPath}/login`, async (req, res) => {
@@ -72,6 +74,23 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
         const token = jwt.sign({ username, uuid: userEntry.uuid, device: uuidv4() }, process.env.JWT_KEY, { expiresIn: '14d' });
         res.json({ username, token });
     });
+
+    app.post(`${serverPath}/mail`, authenticateToken, async (req, res) => {
+        // only x mails per user per day, should be configurable in env
+        // log sent emails with sender, reciever and timestamp
+        // smtp sending
+        // html template
+        // attachment
+        // sender should be in blind copy
+
+        const replyTo = req.body?.replyTo;
+        if (!replyTo) return res.status(400).json(error("ReplyTo must not be empty!", ["replyto"]));
+        const html = req.body?.html;
+        if (!html) return res.status(400).json(error("HTML must not be empty!", ["html"]));
+
+
+        res.json({})
+    })
 })()
 
 export default app
