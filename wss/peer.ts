@@ -10,7 +10,7 @@ export class Peer {
     socket: WebSocket
     token: string
     private pingCount: number = 0
-    private lastConnectionInfo: Array<User> = []
+    private lastConnectionInfo: Array<User> = null
 
     public constructor(device: string, user: User, socket: WebSocket) {
         this.device = device
@@ -42,7 +42,16 @@ export class Peer {
 
     public async sendConnectionInfo() {
         const connectionInfo = await this.user.getAvailableUsers()
-        if(JSON.stringify(connectionInfo.map(p => p.id)) === JSON.stringify(this.lastConnectionInfo.map(p => p.id))) return
+        if(this.lastConnectionInfo !== null && JSON.stringify(connectionInfo.map(p => p.id)) === JSON.stringify(this.lastConnectionInfo.map(p => p.id))) return
         send(this.socket, {type: "available_clients", payload: {clients: connectionInfo}})
+    }
+
+    public toJSON() {
+        return {
+            device: this.device,
+            turnKey: this.turnKey,
+            user: this.user,
+            token: this.token
+        }
     }
 }

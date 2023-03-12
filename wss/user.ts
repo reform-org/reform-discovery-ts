@@ -36,27 +36,36 @@ export class User {
         const users = (
             await db.all(`
                 SELECT name, uuid FROM users 
-                WHERE EXISTS(SELECT * FROM trust WHERE (a = ? AND b = id)) 
-                AND EXISTS(SELECT * FROM trust WHERE (a = id AND b = ?)) 
+                WHERE EXISTS(SELECT * FROM trust WHERE (a = ? AND b = uuid)) 
+                AND EXISTS(SELECT * FROM trust WHERE (a = uuid AND b = ?)) 
                 AND EXISTS(SELECT * FROM devices WHERE user_uuid = ?)`, this.id, this.id, this.id)
         ).map(user => new User(user.uuid, user.name));
 
         return users
     }
 
-    public async getAvailableUsers(): Promise<Array<User>> {
+    public async getAvailableUsers(): Promise<Array<AvailableUser>> {
         const users = (
             await db.all(`
             SELECT name, uuid, 
-            EXISTS(SELECT * FROM trust WHERE a = ? AND b = id) as trusted, 
-            (EXISTS(SELECT * FROM trust WHERE a = ? AND b = id) AND EXISTS(SELECT * FROM trust WHERE a = id AND b = ?)) as mutualTrust 
+            EXISTS(SELECT * FROM trust WHERE a = ? AND b = uuid) as trusted, 
+            (EXISTS(SELECT * FROM trust WHERE a = ? AND b = uuid) AND EXISTS(SELECT * FROM trust WHERE a = uuid AND b = ?)) as mutualTrust 
             FROM users 
-            WHERE (EXISTS(SELECT * FROM trust WHERE a = ? AND b = id) 
-            AND EXISTS(SELECT * FROM trust WHERE a = id AND b = ?)) = FALSE 
-            AND NOT id = ? 
-            AND EXISTS(SELECT * FROM devices WHERE user_uuid = ?)`, this.id, this.id, this.id, this.id, this.id, this.id, this.id)
-        ).map(user => new User(user.uuid, user.name));
+            WHERE NOT uuid = ? 
+            AND EXISTS(SELECT * FROM devices WHERE user_uuid = ?)`, this.id, this.id, this.id, this.id, this.id)
+        ).map(user => new AvailableUser(user.uuid, user.name, user.trusted, user.mutualTrust));
 
         return users
+    }
+}
+
+export class AvailableUser extends User{
+    trusted: boolean
+    mutualTrust: boolean
+
+    public constructor(id: string, name: string, trusted: boolean, mutualTrust: boolean) {
+        super(id, name)
+        this.trusted = trusted
+        this.mutualTrust = mutualTrust
     }
 }

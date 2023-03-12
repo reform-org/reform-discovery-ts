@@ -18,9 +18,9 @@ export interface TransmitTokenPayload {
     connection: string
     token: string
 }
-export interface FinishConnectionPayload {
+export interface ConnectionPayload {
     connection: string
 }
-export interface WhitelistPayload {
+export interface SingleUserIdPayload {
     uuid: string
 }

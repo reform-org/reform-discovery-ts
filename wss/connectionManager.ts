@@ -8,6 +8,10 @@ export class ConnectionManager{
     private connections: Array<Connection> = []
     private peers: Array<Peer> = []
 
+    public size() {
+        return this.connections.length
+    }
+
     /**
      * Adds a new connection and has no further side effects
      * @param connection the connection will be added to the list of connections
@@ -20,8 +24,8 @@ export class ConnectionManager{
      * Removes a connection and has no further side effects
      * @param connection the connection will be removed from the list of connections
      */
-    public removeConnection(connection: Connection) {
-        this.connections = this.connections.filter(p => p.id !== connection.id) 
+    public removeConnection(id: string) {
+        this.connections = this.connections.filter(p => p.id !== id) 
     }
 
     /**
@@ -80,6 +84,7 @@ export class ConnectionManager{
 
     public removePeer(ws: WebSocket) {
         const peer = this.getPeer(ws);
+        if(!peer) return;
         db.instance.run("DELETE FROM devices WHERE device_uuid = ?", peer.device);
         this.peers = this.peers.filter(p => p.socket !== ws)
         const openConnections = this.connections.filter(p => p.client.socket === ws || p.host.socket === ws)
@@ -93,6 +98,10 @@ export class ConnectionManager{
 
     public getPeers(user: User) {
         return this.peers.filter(p => p.user.id === user.id)
+    }
+
+    public getPeersById(userId: string) {
+        return this.peers.filter(p => p.user.id === userId)
     }
 
     public async broadcastConnectionInfo() {

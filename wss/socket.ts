@@ -2,7 +2,7 @@ import { createServer } from "https";
 import { readFileSync } from "fs";
 import { createServer as createHttpServer } from "http";
 import { WebSocket, WebSocketServer } from "ws";
-import { AuthPayload, Event, FinishConnectionPayload, Payload, TokenPayload, TransmitTokenPayload, WhitelistPayload } from "./events";
+import { AuthPayload, Event, ConnectionPayload, Payload, TokenPayload, TransmitTokenPayload, SingleUserIdPayload } from "./events";
 import jwt from "jsonwebtoken";
 import { db } from "../utils/db";
 import { ping } from "./helpers";
@@ -32,8 +32,10 @@ wss.on("connection", (ws: WebSocket) => {
     ws.on("message", function (message) {
         try {
             const event: Event<Payload> = JSON.parse(message.toString());
-            if (event.type === "pong" || event.type === "authenticate" || connections.getPeer(ws)) {
-                this.emit(event.type, connections.getPeer(ws), event.payload);
+            if (event.type === "pong" || event.type === "authenticate") {
+                this.emit(event.type, event.payload);
+            } else if (connections.getPeer(ws)) {
+                this.emit(event.type, event.payload, connections.getPeer(ws))
             }
         } catch (err) {
             console.log('not an event', err);
@@ -64,25 +66,33 @@ wss.on("connection", (ws: WebSocket) => {
                 await connections.broadcastConnectionInfo()
             });
         })
-        .on("host_token", (peer: Peer, payload: TransmitTokenPayload) => {
+        .on("connect_to", async (payload: SingleUserIdPayload, peer: Peer) => {
+            connections.getPeersById(payload.uuid).forEach(p => {
+                connections.connect(p, peer)
+            })
+        })
+        .on("connection_closed", async (payload: ConnectionPayload) => {
+            connections.removeConnection(payload.connection)
+        })
+        .on("host_token", (payload: TransmitTokenPayload) => {
             const connection = connections.getConnection(payload.connection)
             connection.host.token = payload.token
             connection.requestClientToken()
         })
-        .on("client_token", (peer: Peer, payload: TransmitTokenPayload) => {
+        .on("client_token", (payload: TransmitTokenPayload) => {
             const connection = connections.getConnection(payload.connection)
             connection.client.token = payload.token
 
             connection.requestClientFinishConnection()
             connection.requestHostFinishConnection()
         })
-        .on("finish_connection", (peer: Peer, payload: FinishConnectionPayload) => {
+        .on("finish_connection", (payload: ConnectionPayload, peer: Peer) => {
             connections.getConnection(payload.connection).finish(peer)
         })
         .on("request_available_clients", async (peer: Peer) => {
             await peer.sendConnectionInfo()
         })
-        .on("whitelist_add", async (peer: Peer, payload: WhitelistPayload) => {
+        .on("whitelist_add", async (payload: SingleUserIdPayload, peer: Peer) => {
             const userToTrust = await (new User()).load(payload.uuid)
             if (!userToTrust) return;
 
@@ -96,27 +106,36 @@ wss.on("connection", (ws: WebSocket) => {
                 })
             }
 
-            await peer.sendConnectionInfo()
-            await Promise.all(connections.getPeers(peer.user).map(p => p.sendConnectionInfo()))
+            for (let connection of connections.getConnections(peer.user)) {
+                if (connection.client.user.id === peer.user.id) await connection.client.sendConnectionInfo()
+                if (connection.host.user.id === peer.user.id) await connection.host.sendConnectionInfo()
+            }
+
+            for (let connection of connections.getConnections(userToTrust)) {
+                if (connection.client.user.id === userToTrust.id) await connection.client.sendConnectionInfo()
+                if (connection.host.user.id === userToTrust.id) await connection.host.sendConnectionInfo()
+            }
         })
-        .on("whitelist_del", async (peer: Peer, payload: WhitelistPayload) => {
+        .on("whitelist_del", async (payload: SingleUserIdPayload, peer: Peer) => {
             const userToUntrust = await (new User()).load(payload.uuid)
             if (!userToUntrust) return;
 
             peer.user.withdrawTrust(userToUntrust)
 
-            const connectionsToClose = connections.getConnections(peer.user).filter(p => p.client.user.id !== userToUntrust.id && p.host.user.id !== userToUntrust.id)
+            const connectionsToClose = connections.getConnections(peer.user).filter(p =>
+                (p.client.user.id === peer.user.id && p.host.user.id === userToUntrust.id)
+                || (p.host.user.id === peer.user.id && p.client.user.id === userToUntrust.id))
             connectionsToClose.forEach(connection => connection.close(peer))
-          
-            await Promise.all(connections.getConnections(peer.user).map(connection => {
-                if(connection.client.user.id === peer.user.id) connection.client.sendConnectionInfo()
-                if(connection.host.user.id === peer.user.id) connection.host.sendConnectionInfo()
-            }))
-            
-            await Promise.all(connections.getConnections(userToUntrust).map(connection => {
-                if(connection.client.user.id === userToUntrust.id) connection.client.sendConnectionInfo()
-                if(connection.host.user.id === userToUntrust.id) connection.host.sendConnectionInfo()
-            }))
+
+            for (let connection of connections.getConnections(peer.user)) {
+                if (connection.client.user.id === peer.user.id) await connection.client.sendConnectionInfo()
+                if (connection.host.user.id === peer.user.id) await connection.host.sendConnectionInfo()
+            }
+
+            for (let connection of connections.getConnections(userToUntrust)) {
+                if (connection.client.user.id === userToUntrust.id) await connection.client.sendConnectionInfo()
+                if (connection.host.user.id === userToUntrust.id) await connection.host.sendConnectionInfo()
+            }
         })
 });
 
