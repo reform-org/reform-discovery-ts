@@ -61,6 +61,7 @@ export class ConnectionManager{
      */
     public connect(host: Peer, client: Peer) {
         if(this.checkConnected(host, client)) return;
+        if(!this.checkConnectionIsAllowed(host, client)) return;
         if(host.socket === client.socket) return;
         const connection = new Connection(host, client)
         this.addConnection(connection)
@@ -76,6 +77,11 @@ export class ConnectionManager{
     private checkConnected(a: Peer, b: Peer): Boolean {
         return this.connections.filter(p => (p.client === a && p.host === b) || (p.client === b && p.host === a)).length > 0
     }
+
+    private async checkConnectionIsAllowed(a: Peer, b: Peer): Promise<Boolean> {
+        return (await a.user.getConnectableUsers()).filter(p => p.id === b.user.id).length > 0
+    }
+
 
     public addPeer(peer: Peer) {
         this.peers.push(peer)

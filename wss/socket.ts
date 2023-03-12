@@ -52,6 +52,11 @@ wss.on("connection", (ws: WebSocket) => {
                 };
 
                 const user = await (new User()).load(tokenPayload.uuid)
+                if(!user) {
+                    ws.close();
+                    return;
+                }
+
                 const peer = new Peer(tokenPayload.device, user, ws)
                 connections.addPeer(peer)
 
@@ -106,15 +111,7 @@ wss.on("connection", (ws: WebSocket) => {
                 })
             }
 
-            for (let connection of connections.getConnections(peer.user)) {
-                if (connection.client.user.id === peer.user.id) await connection.client.sendConnectionInfo()
-                if (connection.host.user.id === peer.user.id) await connection.host.sendConnectionInfo()
-            }
-
-            for (let connection of connections.getConnections(userToTrust)) {
-                if (connection.client.user.id === userToTrust.id) await connection.client.sendConnectionInfo()
-                if (connection.host.user.id === userToTrust.id) await connection.host.sendConnectionInfo()
-            }
+           await connections.broadcastConnectionInfo()
         })
         .on("whitelist_del", async (payload: SingleUserIdPayload, peer: Peer) => {
             const userToUntrust = await (new User()).load(payload.uuid)
@@ -127,15 +124,7 @@ wss.on("connection", (ws: WebSocket) => {
                 || (p.host.user.id === peer.user.id && p.client.user.id === userToUntrust.id))
             connectionsToClose.forEach(connection => connection.close(peer))
 
-            for (let connection of connections.getConnections(peer.user)) {
-                if (connection.client.user.id === peer.user.id) await connection.client.sendConnectionInfo()
-                if (connection.host.user.id === peer.user.id) await connection.host.sendConnectionInfo()
-            }
-
-            for (let connection of connections.getConnections(userToUntrust)) {
-                if (connection.client.user.id === userToUntrust.id) await connection.client.sendConnectionInfo()
-                if (connection.host.user.id === userToUntrust.id) await connection.host.sendConnectionInfo()
-            }
+            await connections.broadcastConnectionInfo()
         })
 });
 

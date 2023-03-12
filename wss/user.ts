@@ -35,11 +35,10 @@ export class User {
     public async getConnectableUsers(): Promise<Array<User>> {
         const users = (
             await db.all(`
-                SELECT name, uuid FROM users 
+                SELECT name, uuid, EXISTS(SELECT * FROM devices WHERE user_uuid = uuid) as online FROM users 
                 WHERE EXISTS(SELECT * FROM trust WHERE (a = ? AND b = uuid)) 
-                AND EXISTS(SELECT * FROM trust WHERE (a = uuid AND b = ?)) 
-                AND EXISTS(SELECT * FROM devices WHERE user_uuid = ?)`, this.id, this.id, this.id)
-        ).map(user => new User(user.uuid, user.name));
+                AND EXISTS(SELECT * FROM trust WHERE (a = uuid AND b = ?))`, this.id, this.id)
+        ).filter(p => p.online).map(user => new User(user.uuid, user.name));
 
         return users
     }
@@ -47,14 +46,12 @@ export class User {
     public async getAvailableUsers(): Promise<Array<AvailableUser>> {
         const users = (
             await db.all(`
-            SELECT name, uuid, 
+            SELECT name, uuid, EXISTS(SELECT * FROM devices WHERE user_uuid = uuid) as online,
             EXISTS(SELECT * FROM trust WHERE a = ? AND b = uuid) as trusted, 
             (EXISTS(SELECT * FROM trust WHERE a = ? AND b = uuid) AND EXISTS(SELECT * FROM trust WHERE a = uuid AND b = ?)) as mutualTrust 
             FROM users 
-            WHERE NOT uuid = ? 
-            AND EXISTS(SELECT * FROM devices WHERE user_uuid = ?)`, this.id, this.id, this.id, this.id, this.id)
-        ).map(user => new AvailableUser(user.uuid, user.name, user.trusted, user.mutualTrust));
-
+            WHERE NOT uuid = ?`, this.id, this.id, this.id, this.id)
+        ).filter(p => p.online).map(user => new AvailableUser(user.uuid, user.name, user.trusted, user.mutualTrust));
         return users
     }
 }
