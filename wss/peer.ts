@@ -42,7 +42,7 @@ export class Peer {
 
     public async sendConnectionInfo() {
         const connectionInfo = await this.user.getAvailableUsers()
-        if(this.lastConnectionInfo !== null && JSON.stringify(connectionInfo.map(p => p.id)) === JSON.stringify(this.lastConnectionInfo.map(p => p.id))) return
+        if(this.lastConnectionInfo !== null && JSON.stringify(connectionInfo) === JSON.stringify(this.lastConnectionInfo)) return
         send(this.socket, {type: "available_clients", payload: {clients: connectionInfo}})
     }
 
