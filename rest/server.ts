@@ -10,6 +10,9 @@ import dotenv from "dotenv"
 import { authenticateToken } from "./middleware";
 import multer from "multer";
 import { Mail, Mailer } from "./mailer";
+import { MailOptions } from "nodemailer/lib/json-transport";
+import { Attachment } from "nodemailer/lib/mailer";
+import { SentMessageInfo } from "nodemailer";
 
 dotenv.config()
 
@@ -56,8 +59,7 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
           }))
     })
     
-    app.use(bodyParser.json());
-    app.use(express.urlencoded({ extended: true }));
+    app.use(bodyParser.json({limit: '200mb'}));
     app.use(cors({ origin: "*" }));
     
     app.post(`${serverPath}/login`, async (req, res) => {
@@ -77,28 +79,43 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
         res.json({ username, token });
     });
 
-    app.post(`${serverPath}/mail`, authenticateToken, multer({}).single("attachment"), async (req, res) => {
+    app.post(`${serverPath}/mail`, authenticateToken, async (req, res) => {
         // only x mails per user per day, should be configurable in env
         // log sent emails with sender, reciever and timestamp
-        // smtp sending
-        // html template
         // attachment
         // sender should be in blind copy
 
-        const from = req.body?.replyTo;
-        if (!from) return res.status(400).json(error("ReplyTo must not be empty!", ["replyto"]));
+        const from = req.body?.from;
+        if (!from) return res.status(400).json(error("from must not be empty!", ["from"]));
         const fromName = req.body?.fromName;
         if (!fromName) return res.status(400).json(error("fromName must not be empty!", ["fromName"]));
         const to = req.body?.to;
         if (!to) return res.status(400).json(error("to must not be empty!", ["to"]));
         const html = req.body?.html;
-        if (!html) return res.status(400).json(error("HTML must not be empty!", ["html"]));
+        if (!html) return res.status(400).json(error("html must not be empty!", ["html"]));
+        const subject = req.body?.subject;
+        if (!subject) return res.status(400).json(error("subject must not be empty!", ["subject"]));
 
         const mailer = Mailer.getInstance()
-        const mail = new Mail({from: from, fromName: fromName, to: to, html: html, subject: "My fancy subject"})
-        await mailer.send(mail)
+        const options = {from: from, fromName: fromName, to: to, html: html, subject: subject}
 
-        res.json({})
+        if(req.body?.cc) options["cc"] = req.body.cc
+        if(req.body?.bcc) options["bcc"] = req.body.bcc
+
+        if(req.body?.attachments) options["attachments"] = req.body.attachments.map(a => {
+            const attachment: Attachment = {
+                content: Buffer.from(a.content),
+                contentType: a.contentType,
+                filename: a.filename
+            }
+            console.log(attachment, a)
+            return attachment
+        })
+
+        const mail = new Mail(options)
+        const answer: SentMessageInfo = await mailer.send(mail)
+
+        res.json({accepted: answer.accepted, rejected: answer.rejected})
     })
 })()
 

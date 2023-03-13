@@ -1,5 +1,6 @@
 import dotenv from "dotenv"
 import nodemailer, { Transporter } from "nodemailer"
+import { Attachment } from "nodemailer/lib/mailer"
 
 dotenv.config()
 
@@ -10,7 +11,8 @@ export interface MailOptions {
     cc?: string[] | string
     bcc?: string[] | string
     subject: string
-    html: string
+    html: string,
+    attachments?: Attachment[]
 }
 
 export class Mail {
@@ -69,6 +71,7 @@ export class Mailer {
     }
 
     public async send(mail: Mail) {
+        console.log(mail.options.attachments)
         return await this.transporter
             .sendMail({ 
                 from: `${mail.options.fromName || ""} ${process.env.SMTP_SENDER || mail.options.from}`,
@@ -79,6 +82,7 @@ export class Mailer {
                 subject: mail.options.subject,
                 text: mail.getPlainText(),
                 html: mail.getHtml(),
+                attachments: mail.options.attachments || []
             })
             .then((info) => {
                 console.log(`Mail sent successfully!`);
