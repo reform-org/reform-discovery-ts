@@ -80,11 +80,6 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
     });
 
     app.post(`${serverPath}/mail`, authenticateToken, async (req, res) => {
-        // only x mails per user per day, should be configurable in env
-        // log sent emails with sender, reciever and timestamp
-        // attachment
-        // sender should be in blind copy
-
         const from = req.body?.from;
         if (!from) return res.status(400).json(error("from must not be empty!", ["from"]));
         const fromName = req.body?.fromName;
