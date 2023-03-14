@@ -40,6 +40,7 @@ export class User {
                 AND EXISTS(SELECT * FROM trust WHERE (a = uuid AND b = ?))`, this.id, this.id)
         ).filter(p => p.online).map(user => new User(user.uuid, user.name));
 
+        users.push(this)
         return users
     }
 
