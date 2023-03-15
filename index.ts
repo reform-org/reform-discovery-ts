@@ -9,8 +9,10 @@ dotenv.config();
 db.init();
 
 (async () => {
-  const mailer = Mailer.getInstance()
-  await mailer.createConnection()
+  if(Mailer.isSetup()) {
+    const mailer = Mailer.getInstance()
+    await mailer.createConnection()
+  }
 })();
 
 app.listen(process.env.VITE_DISCOVERY_SERVER_LISTEN_PORT || 3000, () => {

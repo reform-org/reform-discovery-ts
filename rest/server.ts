@@ -91,11 +91,13 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
         const subject = req.body?.subject;
         if (!subject) return res.status(400).json(error("subject must not be empty!", ["subject"]));
 
-        const mailer = Mailer.getInstance()
         const options = {from: from, fromName: fromName, to: to, html: html, subject: subject}
-
         if(req.body?.cc) options["cc"] = req.body.cc
         if(req.body?.bcc) options["bcc"] = req.body.bcc
+
+        if(!Mailer.isSetup()) return res.json({accepted: [], rejected: [to, options["cc"], options["bcc"]].flat().filter(a => a !== "")})
+
+        const mailer = Mailer.getInstance()
 
         if(req.body?.attachments) options["attachments"] = req.body.attachments.map(a => {
             const attachment: Attachment = {

@@ -51,6 +51,14 @@ export class Mailer {
 
     public constructor() { }
 
+    static isSetup() {
+        return process.env.SMTP_USERNAME !== "" 
+        && process.env.SMTP_PASSWORD !== "" 
+        && process.env.SMTP_HOST !== "" 
+        && process.env.SMTP_PORT !== "" 
+        && process.env.SMTP_SENDER !== ""
+    }
+
     static getInstance() {
         if (!Mailer.instance) {
             Mailer.instance = new Mailer();
@@ -71,9 +79,8 @@ export class Mailer {
     }
 
     public async send(mail: Mail) {
-        console.log(mail.options.attachments)
         return await this.transporter
-            .sendMail({ 
+            .sendMail({
                 from: `${mail.options.fromName || ""} ${process.env.SMTP_SENDER || mail.options.from}`,
                 to: mail.options.to,
                 cc: mail.options.cc || "",
