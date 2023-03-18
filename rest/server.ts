@@ -50,13 +50,17 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
         }
         
         const tokenSet = await openidClient.callback('https://reform.st.informatik.tu-darmstadt.de/api/v1/redirect', params);
-        console.log('received and validated tokens %j', tokenSet);
-        console.log('validated ID Token claims %j', tokenSet.claims());
+        const claims = tokenSet.claims()
+        // console.log('received and validated tokens %j', tokenSet);
+        console.log('validated ID Token claims %j', claims);
+        console.log(`expires in ${Math.round((claims.exp - claims.iat)/60)}min`)
+        res.cookie("access_token", tokenSet.access_token)
+        res.redirect("https://reform.st.informatik.tu-darmstadt.de")
     })
     
-    app.get(`${serverPath}/sso`, async (req, res) => { 
+    app.get(`${serverPath}/authorize`, async (req, res) => { 
     
-        res.json(openidClient.authorizationUrl({
+        res.redirect(openidClient.authorizationUrl({
             scope: 'openid',
           }))
     })
