@@ -22,14 +22,13 @@ export const app = express();
 const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
 
 (async () => {
-    const codeVerifier = generators.codeVerifier();
-    const codeChallenge = generators.codeChallenge(codeVerifier);
     const issuer = await Issuer.discover("https://login.tu-darmstadt.de")
     const openidClient = new issuer.Client({
         client_id: process.env.SSO_CLIENT_ID,
         client_secret: process.env.SSO_CLIENT_SECRET,
         redirect_uris: ['https://reform.st.informatik.tu-darmstadt.de/api/v1/redirect'],
         response_types: ['code'],
+        token_endpoint_auth_method: "client_secret_basic"
       });
 
 
@@ -43,8 +42,14 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
     };
     
     app.get(`${serverPath}/redirect`, async (req, res) => {
-        const params = openidClient.callbackParams(req)
-        const tokenSet = await openidClient.callback('https://reform.st.informatik.tu-darmstadt.de/', params, { code_verifier: codeVerifier });
+        const oidParams = openidClient.callbackParams(req)
+
+        const params = {
+            code: oidParams.code,
+            grant_type: "authorization_code"
+        }
+        
+        const tokenSet = await openidClient.callback('https://reform.st.informatik.tu-darmstadt.de/api/v1/redirect', params);
         console.log('received and validated tokens %j', tokenSet);
         console.log('validated ID Token claims %j', tokenSet.claims());
     })
@@ -52,10 +57,7 @@ const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
     app.get(`${serverPath}/sso`, async (req, res) => { 
     
         res.json(openidClient.authorizationUrl({
-            scope: 'openid uid givenName',
-            resource: 'https://my.api.example.com/resource/32178',
-            code_challenge: codeChallenge,
-            code_challenge_method: 'S256',
+            scope: 'openid',
           }))
     })
     
