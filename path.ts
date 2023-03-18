@@ -1,3 +1,3 @@
-import path from "path";
+import url from "url"
 
-export const root = path.resolve(__dirname)
+export const root = url.fileURLToPath(new URL('.', import.meta.url));

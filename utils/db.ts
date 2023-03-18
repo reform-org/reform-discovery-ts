@@ -1,5 +1,5 @@
 import sqlite3 from 'sqlite3';
-import { root } from '../path';
+import { root } from '../path.js';
 
 export class db {
   static instance = new sqlite3.Database(root + '/data/database.sqlite');
@@ -27,6 +27,7 @@ export class db {
   static init = () => {
     db.instance.exec(`
     CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, uuid VARCHAR(255), name VARCHAR(255), password VARCHAR(255));
+    CREATE TABLE IF NOT EXISTS sso_users (id INTEGER PRIMARY KEY, tuid VARCHAR(255), name VARCHAR(255));
     CREATE TABLE IF NOT EXISTS devices (user_uuid VARCHAR(255), device_uuid VARCHAR(255), PRIMARY KEY (user_uuid, device_uuid), FOREIGN KEY(user_uuid) REFERENCES users(uuid));
     CREATE TABLE IF NOT EXISTS trust (a INTEGER, b INTEGER, PRIMARY KEY (a, b), FOREIGN KEY(a) REFERENCES users(id), FOREIGN KEY(b) REFERENCES users(id));
     `);

@@ -1,6 +1,6 @@
-import { ping, send } from "./helpers"
-import { generateTurnKey, TurnKey } from "./turn"
-import { User } from "./user"
+import { ping, send } from "./helpers.js"
+import { generateTurnKey, TurnKey } from "./turn.js"
+import { User } from "./user.js"
 import { WebSocket } from "ws";
 
 export class Peer {

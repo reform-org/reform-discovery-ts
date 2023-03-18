@@ -1,4 +1,7 @@
-import { db } from "../utils/db"
+import { db } from "../utils/db.js"
+import bcrypt from "bcrypt"
+import { randomUUID } from "crypto"
+import jwt from "jsonwebtoken"
 
 export class User {
     name: string
@@ -8,17 +11,19 @@ export class User {
     public constructor();
     public constructor(uuid: string, name: string);
     public constructor(uuid?: string, name?: string) {
+       this.apply(uuid, name)
+    }
+
+    protected apply(uuid?: string, name?: string) {
         this.id = uuid ?? ""
         this.name = name ?? ""
         this.displayId = uuid ? uuid.substring(0, 8) : ""
     }
 
-    public async load(uuid: string) {
+    public async fromUUID(uuid: string) {
         const user = await db.get("SELECT * FROM users WHERE uuid = ?", uuid)
         if (user) {
-            this.name = user.name
-            this.id = user.uuid
-            this.displayId = user.uuid.substring(0, 8)
+            this.apply(user.uuid, user.name)
         }
 
         return this
@@ -55,6 +60,10 @@ export class User {
         ).filter(p => p.online).map(user => new AvailableUser(user.uuid, user.name, user.trusted, user.mutualTrust));
         return users
     }
+
+    public issueToken(): string {
+        return jwt.sign({ username: this.name, uuid: this.id, device: randomUUID() }, process.env.JWT_KEY, { expiresIn: '14d' })
+    }
 }
 
 export class AvailableUser extends User{
@@ -65,5 +74,27 @@ export class AvailableUser extends User{
         super(id, name)
         this.trusted = trusted
         this.mutualTrust = mutualTrust
+    }
+}
+
+export class ClassicUser extends User{
+    password: string
+
+    public constructor() {
+       super()
+    }
+
+    public async fromName(name: string) {
+        const user = await db.get("SELECT * FROM users WHERE name = ?", name)
+        if (user) {
+            this.apply(user.uuid, user.name)
+            this.password = user.password
+        }
+
+        return this
+    }
+
+    public isPasswordValid(password: string): boolean {
+        return bcrypt.compareSync(password, this.password)
     }
 }

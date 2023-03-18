@@ -2,13 +2,13 @@ import { createServer } from "https";
 import { readFileSync } from "fs";
 import { createServer as createHttpServer } from "http";
 import { WebSocket, WebSocketServer } from "ws";
-import { AuthPayload, Event, ConnectionPayload, Payload, TokenPayload, TransmitTokenPayload, SingleUserIdPayload } from "./events";
+import { AuthPayload, Event, ConnectionPayload, Payload, TokenPayload, TransmitTokenPayload, SingleUserIdPayload } from "./events.js";
 import jwt from "jsonwebtoken";
-import { db } from "../utils/db";
-import { ping } from "./helpers";
-import { ConnectionManager } from "./connectionManager";
-import { Peer } from "./peer";
-import { User } from "./user";
+import { db } from "../utils/db.js";
+import { ping } from "./helpers.js";
+import { ConnectionManager } from "./connectionManager.js";
+import { Peer } from "./peer.js";
+import { User } from "./user.js";
 
 export const webSocketServer = process.env.HTTPS === "TRUE" ? createServer({
     cert: readFileSync(process.env.CERT_PATH),
@@ -51,7 +51,7 @@ wss.on("connection", (ws: WebSocket) => {
                     return;
                 };
 
-                const user = await (new User()).load(tokenPayload.uuid)
+                const user = await (new User()).fromUUID(tokenPayload.uuid)
                 if(!user) {
                     ws.close();
                     return;
@@ -98,7 +98,7 @@ wss.on("connection", (ws: WebSocket) => {
             await peer.sendConnectionInfo()
         })
         .on("whitelist_add", async (payload: SingleUserIdPayload, peer: Peer) => {
-            const userToTrust = await (new User()).load(payload.uuid)
+            const userToTrust = await (new User()).fromUUID(payload.uuid)
             if (!userToTrust) return;
 
             peer.user.trust(userToTrust)
@@ -114,7 +114,7 @@ wss.on("connection", (ws: WebSocket) => {
            await connections.broadcastConnectionInfo()
         })
         .on("whitelist_del", async (payload: SingleUserIdPayload, peer: Peer) => {
-            const userToUntrust = await (new User()).load(payload.uuid)
+            const userToUntrust = await (new User()).fromUUID(payload.uuid)
             if (!userToUntrust) return;
 
             peer.user.withdrawTrust(userToUntrust)

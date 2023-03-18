@@ -1,8 +1,8 @@
 import { WebSocket } from "ws";
-import { db } from "../utils/db";
-import { Connection } from "./connection";
-import { Peer } from "./peer";
-import { User } from "./user";
+import { db } from "../utils/db.js";
+import { Connection } from "./connection.js";
+import { Peer } from "./peer.js";
+import { User } from "./user.js";
 
 export class ConnectionManager{
     private connections: Array<Connection> = []

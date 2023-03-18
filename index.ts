@@ -1,8 +1,8 @@
-import app from './rest/server';
+import app from './rest/server.js';
 import dotenv from "dotenv";
-import webSocketServer from './wss/socket';
-import { db } from "./utils/db";
-import { Mailer } from './rest/mailer';
+import webSocketServer from './wss/socket.js';
+import { db } from "./utils/db.js";
+import { Mailer } from './rest/mailer.js';
 
 dotenv.config();
 

@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { Event } from "./events";
+import { Event } from "./events.js";
 
 export const ping = (ws: WebSocket) => {
     send(ws, {type: "ping"})

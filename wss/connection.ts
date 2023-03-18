@@ -1,7 +1,6 @@
 import { randomUUID } from "crypto";
-import { WebSocket } from "ws";
-import { send } from "./helpers";
-import { Peer } from "./peer";
+import { send } from "./helpers.js";
+import { Peer } from "./peer.js";
 
 export enum ConnectionState {
     Pending,

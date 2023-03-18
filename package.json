@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.ts",
+    "start": "nodemon --esm index.ts",
     "debug": "nodemon --require=debugging-aid/network index.ts",
-    "user:add": "ts-node cli.ts",
-    "db:reset": "ts-node reset.ts"
+    "user:add": "ts-node --esm cli.ts",
+    "db:reset": "ts-node --esm reset.ts"
   },
   "author": "",
   "license": "ISC",
@@ -23,17 +24,18 @@
     "debugging-aid": "^0.6.7",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "inquirer": "^9.1.5",
     "jsonwebtoken": "^9.0.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.1",
     "openid-client": "^5.4.0",
     "sqlite3": "^5.1.4",
-    "uuid": "^9.0.0",
     "ws": "^8.12.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
     "@types/cors": "^2.8.13",
+    "@types/inquirer": "^9.0.3",
     "@types/multer": "^1.4.7",
     "@types/nodemailer": "^6.4.7",
     "@types/sqlite3": "^3.1.8",
