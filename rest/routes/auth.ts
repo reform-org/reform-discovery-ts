@@ -45,7 +45,7 @@ export const authRouter = async () => {
             user.setName(userinfo.given_name)
 
             const token = user.issueToken()
-            res.cookie("access_token", token.access_token, {maxAge: token.maxAge})
+            res.cookie("discovery-token", token.access_token, {maxAge: token.maxAge})
             res.redirect("https://reform.st.informatik.tu-darmstadt.de")
         } catch (e) {
             res.json({ error: e })
@@ -53,7 +53,6 @@ export const authRouter = async () => {
     })
 
     router.get(`${serverPath}/authorize`, async (req, res) => {
-
         res.redirect(openidClient.authorizationUrl({
             scope: 'openid profile',
         }))
