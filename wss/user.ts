@@ -124,7 +124,7 @@ export class ClassicUser extends User{
     }
 
     public async fromName(name: string) {
-        const user = await db.get("SELECT * FROM users WHERE name = ?", name)
+        const user = await db.get("SELECT * FROM users WHERE name = ? AND type = 'CLASSIC'", name)
         if (user) {
             this.apply(user.id, user.name)
             this.password = user.password
