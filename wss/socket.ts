@@ -2,7 +2,7 @@ import { createServer } from "https";
 import { readFileSync } from "fs";
 import { createServer as createHttpServer } from "http";
 import { WebSocket, WebSocketServer } from "ws";
-import { AuthPayload, Event, ConnectionPayload, Payload, TokenPayload, TransmitTokenPayload, SingleUserIdPayload } from "./events.js";
+import { AuthPayload, Event, ConnectionPayload, Payload, TokenPayload, TransmitTokenPayload, SingleUserIdPayload, EmptyPayload } from "./events.js";
 import jwt from "jsonwebtoken";
 import { db } from "../utils/db.js";
 import { ping } from "./helpers.js";
@@ -94,7 +94,7 @@ wss.on("connection", (ws: WebSocket) => {
         .on("finish_connection", (payload: ConnectionPayload, peer: Peer) => {
             connections.getConnection(payload.connection).finish(peer)
         })
-        .on("request_available_clients", async (peer: Peer) => {
+        .on("request_available_clients", async (payload: EmptyPayload, peer: Peer) => {
             await peer.sendConnectionInfo()
         })
         .on("whitelist_add", async (payload: SingleUserIdPayload, peer: Peer) => {
