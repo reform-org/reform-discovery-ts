@@ -10,8 +10,10 @@ interface Session {
     error: string
 }
 
+const prefix = `${process.env.VITE_SERVER_PROTOCOL}://${process.env.VITE_SERVER_HOST}${process.env.VITE_SERVER_PATH}`
+
 export const authRouter = async () => {
-    const redirect_uri = 'https://reform.st.informatik.tu-darmstadt.de/api/v1/redirect'
+    const redirect_uri = `${prefix}api/v1/redirect`
 
 
     const router = express.Router()
@@ -30,8 +32,6 @@ export const authRouter = async () => {
         if (!oidParams.state) return res.json("query parameter state has not been set")
 
         const state: Session = JSON.parse(Buffer.from(req.query.state.toString(), "base64url").toString("ascii"))
-
-        const prefix = `${process.env.VITE_SERVER_PROTOCOL}://${process.env.VITE_SERVER_HOST}${process.env.VITE_SERVER_PATH}`
 
         if(!state.goto.startsWith(prefix)) return res.redirect(`${state.error}?error=${encodeURIComponent(`redirect url is not permitted`)}`)
         if(!state.error.startsWith(prefix)) return res.send("error url is not permitted")
