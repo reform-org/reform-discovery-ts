@@ -26,9 +26,8 @@ export class db {
 
   static init = () => {
     db.instance.exec(`
-    CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, uuid VARCHAR(255), name VARCHAR(255), password VARCHAR(255));
-    CREATE TABLE IF NOT EXISTS sso_users (id INTEGER PRIMARY KEY, tuid VARCHAR(255), name VARCHAR(255));
-    CREATE TABLE IF NOT EXISTS devices (user_uuid VARCHAR(255), device_uuid VARCHAR(255), PRIMARY KEY (user_uuid, device_uuid), FOREIGN KEY(user_uuid) REFERENCES users(uuid));
+    CREATE TABLE IF NOT EXISTS users (id VARCHAR(255) PRIMARY KEY, name VARCHAR(255), password VARCHAR(255), type VARCHAR(255) CHECK(type in ('SSO', 'CLASSIC')) NOT NULL);
+    CREATE TABLE IF NOT EXISTS devices (user_id VARCHAR(255), device_uuid VARCHAR(255), PRIMARY KEY (user_id, device_uuid), FOREIGN KEY(user_id) REFERENCES users(id));
     CREATE TABLE IF NOT EXISTS trust (a INTEGER, b INTEGER, PRIMARY KEY (a, b), FOREIGN KEY(a) REFERENCES users(id), FOREIGN KEY(b) REFERENCES users(id));
     `);
   };

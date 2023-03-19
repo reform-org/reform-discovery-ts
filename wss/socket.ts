@@ -8,7 +8,7 @@ import { db } from "../utils/db.js";
 import { ping } from "./helpers.js";
 import { ConnectionManager } from "./connectionManager.js";
 import { Peer } from "./peer.js";
-import { User } from "./user.js";
+import { createUser, User, UserTypes } from "./user.js";
 
 export const webSocketServer = process.env.HTTPS === "TRUE" ? createServer({
     cert: readFileSync(process.env.CERT_PATH),
@@ -51,7 +51,7 @@ wss.on("connection", (ws: WebSocket) => {
                     return;
                 };
 
-                const user = await (new User()).fromUUID(tokenPayload.uuid)
+                const user = await (createUser(tokenPayload.type === "SSO" ? UserTypes.SSO : UserTypes.Classic)).fromID(tokenPayload.uuid)
                 if(!user) {
                     ws.close();
                     return;
@@ -98,7 +98,7 @@ wss.on("connection", (ws: WebSocket) => {
             await peer.sendConnectionInfo()
         })
         .on("whitelist_add", async (payload: SingleUserIdPayload, peer: Peer) => {
-            const userToTrust = await (new User()).fromUUID(payload.uuid)
+            const userToTrust = await (createUser(payload.uuid.length === 8 ? UserTypes.SSO : UserTypes.Classic)).fromID(payload.uuid)
             if (!userToTrust) return;
 
             peer.user.trust(userToTrust)
@@ -114,7 +114,7 @@ wss.on("connection", (ws: WebSocket) => {
            await connections.broadcastConnectionInfo()
         })
         .on("whitelist_del", async (payload: SingleUserIdPayload, peer: Peer) => {
-            const userToUntrust = await (new User()).fromUUID(payload.uuid)
+            const userToUntrust = await (createUser(payload.uuid.length === 8 ? UserTypes.SSO : UserTypes.Classic)).fromID(payload.uuid)
             if (!userToUntrust) return;
 
             peer.user.withdrawTrust(userToUntrust)

@@ -9,6 +9,7 @@ export interface AuthPayload extends Payload {
 }
 export interface TokenPayload {
     username: string
+    type: string
     uuid: string
     device: string
     iat: number

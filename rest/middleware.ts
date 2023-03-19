@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { VerifyErrors } from "jsonwebtoken";
 import { TokenPayload } from "../wss/events.js";
-import { User } from "../wss/user.js";
+import { createUser, User, UserTypes } from "../wss/user.js";
 
 declare global {
     namespace Express {
@@ -20,7 +20,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     jwt.verify(token, process.env.JWT_KEY, async (err: VerifyErrors, user: TokenPayload) => {
         if (err) return res.sendStatus(403);
 
-        req.user = await (new User()).fromUUID(user.uuid)
+        req.user = await (createUser(user.type === "SSO" ? UserTypes.SSO : UserTypes.Classic)).fromID(user.uuid)
 
         next();
     });

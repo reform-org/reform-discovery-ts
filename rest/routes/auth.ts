@@ -5,7 +5,7 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { randomUUID } from "crypto";
 import { Issuer } from "openid-client";
-import { ClassicUser, User } from "../../wss/user.js";
+import { ClassicUser, createUser, User, UserTypes } from "../../wss/user.js";
 
 export const authRouter = async () => {
     const redirect_uri = 'https://reform.st.informatik.tu-darmstadt.de/api/v1/redirect'
@@ -34,15 +34,18 @@ export const authRouter = async () => {
         try {
             const tokenSet = await openidClient.callback(redirect_uri, params);
             const claims = tokenSet.claims()
-            // console.log('received and validated tokens %j', tokenSet);
+
             console.log('validated ID Token claims %j', claims);
             console.log(`expires in ${Math.round((claims.exp - claims.iat) / 60)}min`)
 
             const userinfo = await openidClient.userinfo(tokenSet.access_token);
             console.log('userinfo %j', userinfo);
 
-            // set own token
-            res.cookie("access_token", tokenSet.access_token)
+            const user = createUser(UserTypes.SSO, userinfo.sub, userinfo.given_name)
+            user.setName(userinfo.given_name)
+
+            const token = user.issueToken()
+            res.cookie("access_token", token.access_token, {maxAge: token.maxAge})
             res.redirect("https://reform.st.informatik.tu-darmstadt.de")
         } catch (e) {
             res.json({ error: e })
@@ -70,7 +73,7 @@ export const authRouter = async () => {
         if (!user.isPasswordValid(password)) return res.status(401).json(error(`The password for the user "${username}" is wrong.`, ["password"]));
 
         const token = user.issueToken();
-        res.json({ username, token });
+        res.json({ username, token: token.access_token });
     });
 
     return router
