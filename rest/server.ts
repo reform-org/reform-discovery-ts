@@ -2,15 +2,11 @@ import express from "express";
 import { db } from "../utils/db.js";
 import cors from "cors";
 import bodyParser from "body-parser";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { Issuer } from 'openid-client';
 import dotenv from "dotenv"
 import { authenticateToken } from "./middleware.js";
 import { Mail, Mailer } from "./mailer.js";
 import { Attachment } from "nodemailer/lib/mailer";
 import { SentMessageInfo } from "nodemailer";
-import { randomUUID } from "crypto";
 import { error } from "./helpers.js";
 import { authRouter } from "./routes/auth.js";
 
@@ -24,7 +20,7 @@ export const serverPath = process.env.VITE_DISCOVERY_SERVER_PATH;
 (async () => {
     
     app.use(bodyParser.json({limit: '200mb'}));
-    app.use(cors({ origin: "*" }));
+    app.use(cors({ origin: '*' }));
 
     app.use(await authRouter())
 

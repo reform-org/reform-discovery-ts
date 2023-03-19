@@ -48,9 +48,8 @@ export abstract class User {
         db.instance.run("DELETE FROM trust WHERE a = ? AND b = ?", this.id, user.id);
     }
 
-    public setName(name: string) {
-        this.name = name
-        db.instance.run("UPDATE users SET name = ? WHERE id = ?", name, this.id)
+    public storeName() {
+        db.instance.run("UPDATE users SET name = ? WHERE id = ?", this.name, this.id)
     }
 
     public async getConnectableUsers(): Promise<Array<User>> {

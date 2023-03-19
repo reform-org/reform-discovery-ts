@@ -25,6 +25,9 @@ export const authRouter = async () => {
     router.get(`${serverPath}/redirect`, async (req, res) => {
         const oidParams = openidClient.callbackParams(req)
         if (!oidParams.code) return res.json(error("query parameter code has not been set", ["code"]))
+        if (!oidParams.state) return res.json(error("query parameter state has not been set", ["state"]))
+
+        const state = JSON.parse(Buffer.from(req.query.state.toString(), "base64url").toString("ascii"))
 
         const params = {
             code: oidParams.code,
@@ -33,28 +36,29 @@ export const authRouter = async () => {
 
         try {
             const tokenSet = await openidClient.callback(redirect_uri, params);
-            const claims = tokenSet.claims()
-
-            console.log('validated ID Token claims %j', claims);
-            console.log(`expires in ${Math.round((claims.exp - claims.iat) / 60)}min`)
 
             const userinfo = await openidClient.userinfo(tokenSet.access_token);
-            console.log('userinfo %j', userinfo);
 
             const user = createUser(UserTypes.SSO, userinfo.sub, userinfo.given_name)
-            user.setName(userinfo.given_name)
+            user.storeName()
 
             const token = user.issueToken()
-            res.cookie("discovery-token", token.access_token, {maxAge: token.maxAge})
-            res.redirect("https://reform.st.informatik.tu-darmstadt.de")
+            res.cookie("discovery-token", token.access_token, {maxAge: token.maxAge, httpOnly: true})
+            res.redirect(state.goto)
         } catch (e) {
             res.json({ error: e })
         }
     })
 
     router.get(`${serverPath}/authorize`, async (req, res) => {
+        if(!req.query.goto) return res.json(error("Please provide a goto url, to which you will be redirected after successful auth", ["goto"]))
+        const state = {
+            goto: req.query.goto,
+            source: req.baseUrl
+        }
         res.redirect(openidClient.authorizationUrl({
             scope: 'openid profile',
+            state: Buffer.from(JSON.stringify(state)).toString("base64url")
         }))
     })
 
