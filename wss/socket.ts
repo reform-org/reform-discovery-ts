@@ -95,7 +95,7 @@ wss.on("connection", (ws: WebSocket) => {
             connections.getConnection(payload.connection).finish(peer)
         })
         .on("request_available_clients", async (peer: Peer) => {
-            await peer.sendConnectionInfo()
+            await peer.sendConnectionInfo(connections.getAllPeers())
         })
         .on("whitelist_add", async (payload: SingleUserIdPayload, peer: Peer) => {
             const userToTrust = await (createUser(payload.uuid.length === 8 ? UserTypes.SSO : UserTypes.Classic)).fromID(payload.uuid)

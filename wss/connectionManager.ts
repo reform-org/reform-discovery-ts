@@ -110,7 +110,11 @@ export class ConnectionManager{
         return this.peers.filter(p => p.user.id === userId)
     }
 
+    public getAllPeers() {
+        return this.peers
+    }
+
     public async broadcastConnectionInfo() {
-        await Promise.all(this.peers.map(peer => peer.sendConnectionInfo()))
+        await Promise.all(this.peers.map(peer => peer.sendConnectionInfo(this.peers)))
     }
 }

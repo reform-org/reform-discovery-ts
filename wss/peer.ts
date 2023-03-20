@@ -1,6 +1,6 @@
 import { ping, send } from "./helpers.js"
 import { generateTurnKey, TurnKey } from "./turn.js"
-import { User } from "./user.js"
+import { AvailableUser, User } from "./user.js"
 import { WebSocket } from "ws";
 
 export class Peer {
@@ -40,8 +40,16 @@ export class Peer {
         }, 10000);
     }
 
-    public async sendConnectionInfo() {
-        const connectionInfo = await this.user.getAvailableUsers()
+    public async sendConnectionInfo(peers: Peer[]) {
+        const availableUsers = await this.user.getAvailableUsers()
+        const connectionInfo: ConnectionInfo[] = []
+        for(let peer of peers) {
+            let user = availableUsers.find(p => p.id === peer.user.id)
+            if(user) {
+                connectionInfo.push({device: peer.device, ...user})
+            }
+        }
+
         if(this.lastConnectionInfo !== null && JSON.stringify(connectionInfo) === JSON.stringify(this.lastConnectionInfo)) return
         send(this.socket, {type: "available_clients", payload: {clients: connectionInfo}})
     }
@@ -54,4 +62,8 @@ export class Peer {
             token: this.token
         }
     }
+}
+
+interface ConnectionInfo extends AvailableUser {
+    device: string
 }
