@@ -9,9 +9,9 @@ const done = () => {
   process.exit(0);
 };
 
-const getAllClassicUsers = async () => (await db.all("SELECT * FROM users WHERE type = 'CLASSIC'")).map(user => new ClassicUser(user.uuid, user.name))
+const getAllClassicUsers = async () => (await db.all("SELECT * FROM users WHERE type = 'CLASSIC'")).map(user => new ClassicUser(user.id, user.name))
 const getUserChoices = (users: User[]) => users.map(user => ({ name: `${user.name} (${user.displayId}) - ${user.type === UserTypes.SSO ? "sso": "classic"}`, value: user.id }))
-const getAllSSOUsers = async () => (await db.all("SELECT * FROM users WHERE type = 'SSO'")).map(user => new SSOUser(user.tuid, user.name))
+const getAllSSOUsers = async () => (await db.all("SELECT * FROM users WHERE type = 'SSO'")).map(user => new SSOUser(user.id, user.name))
 
 const addClassicUser = async () => {
   const existingUsers = await getAllClassicUsers()

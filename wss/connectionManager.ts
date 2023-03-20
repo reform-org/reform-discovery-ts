@@ -25,7 +25,8 @@ export class ConnectionManager{
      * @param connection the connection will be removed from the list of connections
      */
     public removeConnection(id: string) {
-        this.connections = this.connections.filter(p => p.id !== id) 
+        this.connections = this.connections.filter(p => p.id !== id)
+        this.broadcastConnectionInfo() 
     }
 
     /**

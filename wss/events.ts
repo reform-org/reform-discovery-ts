@@ -25,3 +25,5 @@ export interface ConnectionPayload {
 export interface SingleUserIdPayload {
     uuid: string
 }
+
+export interface EmptyPayload {}
