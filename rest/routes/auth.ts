@@ -33,10 +33,10 @@ export const authRouter = async () => {
 
         const state: Session = JSON.parse(Buffer.from(req.query.state.toString(), "base64url").toString("ascii"))
 
-        if(!state.goto.startsWith(prefix)) return res.redirect(`${state.error}?error=${encodeURIComponent(`redirect url is not permitted`)}`)
+        if(!state.goto.startsWith(prefix)) return res.redirect(`${state.error}?title=${encodeURIComponent("Forbidden Redirect")}&code=400&description=${encodeURIComponent(`redirect url is not permitted`)}`)
         if(!state.error.startsWith(prefix)) return res.send("error url is not permitted")
 
-        if (!oidParams.code) return res.redirect(`${state.error}?error=${encodeURIComponent("query parameter code has not been set")}`)
+        if (!oidParams.code) return res.redirect(`${state.error}?title=${encodeURIComponent("Invalid Request")}&code=400&description=${encodeURIComponent("query parameter code has not been set")}`)
 
         const params = {
             code: oidParams.code,
@@ -49,7 +49,7 @@ export const authRouter = async () => {
             const userinfo = await openidClient.userinfo(tokenSet.access_token);
 
             const existingUser = await db.get("SELECT * FROM users WHERE id = ? AND type = 'SSO'", userinfo.sub)
-            if(!existingUser) return res.redirect(`${state.error}?error=${encodeURIComponent("The user is not whitelisted, please contact your admin to add the user manually")}`)
+            if(!existingUser) return res.redirect(`${state.error}?code=405&title=${encodeURIComponent("Not Allowed")}&description=${encodeURIComponent("The user is not whitelisted. Please contact your admin to add the user manually")}`)
 
             const user = createUser(UserTypes.SSO, userinfo.sub, userinfo.given_name)
             user.storeName()

@@ -9,7 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --esm index.ts",
     "debug": "nodemon --require=debugging-aid/network index.ts",
-    "user:add": "ts-node --esm cli.ts",
+    "user": "ts-node --esm cli.ts",
     "db:reset": "ts-node --esm reset.ts"
   },
   "author": "",
